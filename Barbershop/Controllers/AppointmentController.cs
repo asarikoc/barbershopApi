@@ -1,85 +1,76 @@
 ﻿using barbershopApi.Data;
 using barbershopApi.Models;
+using barbershopApi.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace barbershopApi.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/appointments")]
     [ApiController]
     public class AppointmentController : ControllerBase
     {
-        private readonly BarberShopContext _context;
+        private readonly IAppointmentService _appointmentService;
 
-        public AppointmentController(BarberShopContext context)
+        public AppointmentController(IAppointmentService appointmentService)
         {
-            _context = context;
+            _appointmentService = appointmentService;
         }
 
-        // Define API endpoints for managing Appointments
-        // GET: api/appointments
-        [HttpGet]
-        public ActionResult<IEnumerable<Appointment>> GetAppointments()
+        // GET: api/appointments/{barberId}
+        [HttpGet("{barberId}")]
+        public async Task<IActionResult> GetAppointments(string barberId)
         {
-            var appointments = _context.Appointments.ToList();
+            var appointments = await _appointmentService.GetAppointmentsAsync(barberId);
             return Ok(appointments);
-        }
-
-        // GET: api/appointments/{id}
-        [HttpGet("{id}")]
-        public ActionResult<Appointment> GetAppointment(int id)
-        {
-            var appointment = _context.Appointments.Find(id);
-
-            if (appointment == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(appointment);
         }
 
         // POST: api/appointments
         [HttpPost]
-        public ActionResult<Appointment> PostAppointment(Appointment appointment)
+        public async Task<IActionResult> CreateAppointment([FromBody] Appointment appointment)
         {
-            _context.Appointments.Add(appointment);
-            _context.SaveChanges();
+            if (appointment == null)
+            {
+                return BadRequest();
+            }
 
-            return CreatedAtAction(nameof(GetAppointment), new { id = appointment.AppointmentID }, appointment);
+            var createdAppointment = await _appointmentService.CreateAppointmentAsync(appointment);
+
+            return CreatedAtAction("GetAppointment", new { id = createdAppointment.AppointmentID }, createdAppointment);
         }
 
-        // PUT: api/appointments/{id}
+        // PUT: api/appointments/5
         [HttpPut("{id}")]
-        public ActionResult PutAppointment(int id, Appointment appointment)
+        public async Task<IActionResult> UpdateAppointment(int id, [FromBody] Appointment appointment)
         {
             if (id != appointment.AppointmentID)
             {
                 return BadRequest();
             }
 
-            _context.Entry(appointment).State = EntityState.Modified;
-            _context.SaveChanges();
+            var updatedAppointment = await _appointmentService.UpdateAppointmentAsync(id, appointment);
 
-            return NoContent();
-        }
-
-        // DELETE: api/appointments/{id}
-        [HttpDelete("{id}")]
-        public ActionResult<Appointment> DeleteAppointment(int id)
-        {
-            var appointment = _context.Appointments.Find(id);
-
-            if (appointment == null)
+            if (updatedAppointment == null)
             {
                 return NotFound();
             }
 
-            _context.Appointments.Remove(appointment);
-            _context.SaveChanges();
+            return NoContent();
+        }
 
-            return Ok(appointment);
+        // DELETE: api/appointments/5
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteAppointment(int id)
+        {
+            var deletedAppointment = await _appointmentService.DeleteAppointmentAsync(id);
+
+            if (deletedAppointment == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(deletedAppointment);
         }
     }
 }

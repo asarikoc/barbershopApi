@@ -1,36 +1,36 @@
 ﻿using barbershopApi.Data;
 using barbershopApi.Models;
+using barbershopApi.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace barbershopApi.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/barbers")]
     [ApiController]
     public class BarberController : ControllerBase
     {
-        private readonly BarberShopContext _context;
+        private readonly IBarberService _barberService;
 
-        public BarberController(BarberShopContext context)
+        public BarberController(IBarberService barberService)
         {
-            _context = context;
+            _barberService = barberService;
         }
 
-        // Define API endpoints for managing Barbers
         // GET: api/barbers
         [HttpGet]
-        public ActionResult<IEnumerable<Barber>> GetBarbers()
+        public async Task<IActionResult> GetBarbers()
         {
-            var barbers = _context.Barbers.ToList();
+            var barbers = await _barberService.GetBarbersAsync();
             return Ok(barbers);
         }
 
-        // GET: api/barbers/{id}
+        // GET: api/barbers/5
         [HttpGet("{id}")]
-        public ActionResult<Barber> GetBarber(int id)
+        public async Task<IActionResult> GetBarber(string id)
         {
-            var barber = _context.Barbers.Find(id);
+            var barber = await _barberService.GetBarberByIdAsync(id);
 
             if (barber == null)
             {
@@ -42,45 +42,49 @@ namespace barbershopApi.Controllers
 
         // POST: api/barbers
         [HttpPost]
-        public ActionResult<Barber> PostBarber(Barber barber)
+        public async Task<IActionResult> CreateBarber([FromBody] Barber barber)
         {
-            _context.Barbers.Add(barber);
-            _context.SaveChanges();
+            if (barber == null)
+            {
+                return BadRequest();
+            }
 
-            return CreatedAtAction(nameof(GetBarber), new { id = barber.BarberID }, barber);
+            var createdBarber = await _barberService.CreateBarberAsync(barber);
+
+            return CreatedAtAction("GetBarber", new { id = createdBarber.BarberID }, createdBarber);
         }
 
-        // PUT: api/barbers/{id}
+        // PUT: api/barbers/5
         [HttpPut("{id}")]
-        public ActionResult PutBarber(int id, Barber barber)
+        public async Task<IActionResult> UpdateBarber(string id, [FromBody] Barber barber)
         {
             if (id != barber.BarberID)
             {
                 return BadRequest();
             }
 
-            _context.Entry(barber).State = EntityState.Modified;
-            _context.SaveChanges();
+            var updatedBarber = await _barberService.UpdateBarberAsync(id, barber);
 
-            return NoContent();
-        }
-
-        // DELETE: api/barbers/{id}
-        [HttpDelete("{id}")]
-        public ActionResult<Barber> DeleteBarber(int id)
-        {
-            var barber = _context.Barbers.Find(id);
-
-            if (barber == null)
+            if (updatedBarber == null)
             {
                 return NotFound();
             }
 
-            _context.Barbers.Remove(barber);
-            _context.SaveChanges();
-
-            return Ok(barber);
+            return NoContent();
         }
 
+        // DELETE: api/barbers/5
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteBarber(string id)
+        {
+            var deletedBarber = await _barberService.DeleteBarberAsync(id);
+
+            if (deletedBarber == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(deletedBarber);
         }
+    }
 }

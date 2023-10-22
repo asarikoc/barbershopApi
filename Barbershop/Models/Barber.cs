@@ -5,10 +5,11 @@ namespace barbershopApi.Models
     public class Barber
     {
         [Key]
-        public int BarberID { get; set; }
+        public string BarberID { get; set; }
         public string Name { get; set; }
-        public string Expertise { get; set; }
         public string ImageURL { get; set; }
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
 
         // Navigation Properties
         public ICollection<Appointment> Appointments { get; set; }
