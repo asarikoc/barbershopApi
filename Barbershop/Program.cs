@@ -10,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 string connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
+const string myAllowSpecificOrigins = "_myAllowSpecificOrigins";
 // Enable CORS
 builder.Services.AddCors();
 
@@ -27,6 +27,20 @@ builder.Services.AddTransient<IReviewService, ReviewService>();
 builder.Services.AddTransient<IBarberRepository, BarberRepository>();
 builder.Services.AddTransient<IAppointmentRepository, AppointmentRepository>();
 builder.Services.AddTransient<IReviewRepository, ReviewRepository>();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(myAllowSpecificOrigins,
+        corsPolicyBuilder =>
+        {
+            corsPolicyBuilder.WithOrigins(
+                    "http://localhost:3000",
+                    "https://localhost:3000",
+                    "http://localhost:8000")
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        });
+});
 // Register other services and dependencies as needed
 
 
